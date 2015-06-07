@@ -5,12 +5,34 @@
         <script>
         window.fbAsyncInit = function() {
             FB.init({
-                appId: '698906146882218',
+                appId: '1619998651574970',
                 status: true, // get info about user immediately after init
                 xfbml: false, // no FBML social plugins, decrease load time
                 version: 'v2.3'
             });
-            // ADD ADDITIONAL FACEBOOK CODE HERE
+
+            function onLogin(response) {
+                if (response.status == 'connected') {
+                    FB.api('/me?fields=first_name', function(data) {
+                        var welcomeBlock = document.getElementById('fb-welcome');
+                        welcomeBlock.innerHTML = 'Hello, ' + data.first_name + '!';
+                    });
+                }
+            }
+
+            FB.getLoginStatus(function(response) {
+                // Check login status on load, and if the user is
+                // already logged in, go directly to the welcome message.
+                if (response.status == 'connected') {
+                    onLogin(response);
+                } else {
+                    // Otherwise, show Login dialog first.
+                    FB.login(function(response) {
+                        onLogin(response);
+                    }, {scope: 'user_friends'});
+                    // https://developers.facebook.com/docs/facebook-login/permissions/v2.3#reference-user_friends
+                }
+            });
         };
 
         (function(d, s, id){
@@ -23,6 +45,6 @@
         </script>
     </head>
     <body>
-        TODO: body
+        <h1 id="fb-welcome"></h1>
     </body>
 </html>
