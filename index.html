@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Wild Karma</title>
+        <script>
+        window.fbAsyncInit = function() {
+            FB.init({
+                appId: '698906146882218',
+                status: true, // get info about user immediately after init
+                xfbml: false, // no FBML social plugins, decrease load time
+                version: 'v2.3'
+            });
+            // ADD ADDITIONAL FACEBOOK CODE HERE
+        };
+
+        (function(d, s, id){
+            var js, fjs = d.getElementsByTagName(s)[0];
+            if (d.getElementById(id)) {return;}
+            js = d.createElement(s); js.id = id;
+            js.src = "//connect.facebook.net/en_US/sdk.js";
+            fjs.parentNode.insertBefore(js, fjs);
+        }(document, 'script', 'facebook-jssdk'));
+</script>
+    </head>
+    <body>
+        TODO: body
+    </body>
+</html>
