@@ -5,6 +5,12 @@ Facebook [Canvas](https://developers.facebook.com/docs/games/canvas) App
 that allows users to recommend new graph connections and store these
 recommendations in [Open Graph](https://developers.facebook.com/docs/games/opengraph).
 
+Local Dev
+--------
+1. Install [node.js](https://nodejs.org/).
+2. cd to root of project.
+3. `npm install`
+4. `npm start` to run the server. See package.json for port configuration.
 
 Deploy: Prod
 --------
