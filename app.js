@@ -8,13 +8,13 @@ var appId = function() {
     return isDev ? APP_ID_DEV : APP_ID_PROD;
 };
 var isDev = function() {
-    return document.location.hostname == "localhost";
+    return document.location.hostname.indexOf("localhost") > -1;
 };
 
 
 // ### COMMON HELPER METHODS ###
-function callback(response) {
-    console.log(response);
+function log(obj) {
+    console.log(obj);
 }
 
 
@@ -52,7 +52,7 @@ function renderMFS() {
         // Create a button to send the Request(s)
         var sendButton = document.createElement('input');
         sendButton.type = 'button';
-        sendButton.value = 'Send Request';
+        sendButton.value = 'Connect Friends';
         sendButton.onclick = sendRequest;
         mfsForm.appendChild(sendButton);
     });
@@ -64,16 +64,50 @@ function sendRequest() {
     var mfsForm = document.getElementById('mfsForm');
     for(var i = 0; i < mfsForm.friends.length; i++) {
         if(mfsForm.friends[i].checked) {
+            // To get display name:
+            // mfsForm.friends[i].nextSibling.data 
             sendUIDs += mfsForm.friends[i].value + ',';
         }
     }
 
     // Use FB.ui to send the Request(s)
     // TODO You cannot send app requests for non-game apps. This appears to be the only way for now.
-    FB.ui({
-        method: 'send',
-        to: sendUIDs,
-        link: 'https://google.com',
-        title: 'Check This Person Out!',
-    }, callback);
+//    FB.ui({
+//        method: 'send',
+//        to: sendUIDs,
+//        link: 'https://google.com',
+//        title: 'Check This Person Out!',
+//    }, log);
+    
+    // Create profile object.
+    FB.api(
+        'me/objects/profile',
+        'post',
+        {
+           object: {
+              'og:title': 'Connection Made! ' + new Date(),
+              'og:image': 'https://s-static.ak.fbcdn.net/images/devsite/attachment_blank.png',
+              'profile:first_name': 'Steve',
+              'profile:last_name': 'Steverson',
+              'profile:username': 'foo@bar.io',
+              'profile:gender': 'Male'
+           }
+        },
+        function(response) {
+            log(response);
+
+            var id = response['id'];
+            
+            // Make post with profile.
+            FB.api(
+              'me/wild-karma-dev:connect',
+              'post',
+              {
+                profile: [id, id] // Or profile: id
+                // privacy: {'value': 'SELF'}
+              },
+              log
+            );
+        }
+    );
 }
