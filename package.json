@@ -1,0 +1,17 @@
+{
+  "name": "wild-karma",
+  "version": "0.1.0",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/wild-karma/canvas.git"
+  },
+  "local-web-server": {
+    "port": 8100
+  },
+  "scripts": {
+    "start": "ws"
+  },
+  "devDependencies": {
+    "local-web-server": "^0.5.19"
+  }
+}
