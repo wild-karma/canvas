@@ -70,44 +70,31 @@ function sendRequest() {
         }
     }
 
-    // Use FB.ui to send the Request(s)
-    // TODO You cannot send app requests for non-game apps. This appears to be the only way for now.
-//    FB.ui({
-//        method: 'send',
-//        to: sendUIDs,
-//        link: 'https://google.com',
-//        title: 'Check This Person Out!',
-//    }, log);
-    
     // Create profile object.
-    FB.api(
-        'me/objects/profile',
-        'post',
-        {
-           object: {
-              'og:title': 'Connection Made! ' + new Date(),
-              'og:image': 'https://s-static.ak.fbcdn.net/images/devsite/attachment_blank.png',
-              'profile:first_name': 'Steve',
-              'profile:last_name': 'Steverson',
-              'profile:username': 'foo@bar.io',
-              'profile:gender': 'Male'
-           }
-        },
-        function(response) {
-            log(response);
+    FB.api('me/objects/profile', 'post',
+            {
+                object: {
+                    'og:title': 'Connection Made! ' + new Date(),
+                    'og:image': 'https://s-static.ak.fbcdn.net/images/devsite/attachment_blank.png',
+                    'profile:first_name': 'Steve',
+                    'profile:last_name': 'Steverson',
+                    'profile:username': 'foo@bar.io',
+                    'profile:gender': 'Male'
+                }
+            },
+            function(response) {
+                log(response);
 
-            var id = response['id'];
-            
-            // Make post with profile.
-            FB.api(
-              'me/wild-karma-dev:connect',
-              'post',
-              {
-                profile: [id, id] // Or profile: id
-                // privacy: {'value': 'SELF'}
-              },
-              log
-            );
-        }
+                var id = response['id'];
+
+                // Make post with profile.
+                FB.api('me/wild-karma-dev:connect', 'post',
+                        {
+                            profile: [id, id] // Or profile: id
+                            // privacy: {'value': 'SELF'}
+                        },
+                        log
+                );
+            }
     );
 }
