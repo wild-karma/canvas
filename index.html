@@ -18,8 +18,8 @@
                 } else {
                     FB.login(function(response) {
                         onLogin(response);
-                    }, {scope: 'user_friends,publish_actions'});
-                    // https://developers.facebook.com/docs/facebook-login/permissions/v2.3#reference-user_friends
+                    }, {scope: 'publish_actions'});
+                    // TODO: JIT permission request?
                 }
             });
         };
