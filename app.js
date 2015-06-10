@@ -3,6 +3,7 @@ APP_ID_DEV = '1620490794859089';
 APP_ID_PROD = '1619998651574970';
 APP_NS_DEV = 'wild-karma-dev';
 APP_NS_PROD = 'wild-karma';
+TAGGABLE_FRIEND_FIELDS = ['id', 'first_name', 'last_name', 'name', 'picture'];
 
 
 // ### GLOBAL ENVIRONMENT METHODS ###
@@ -39,13 +40,14 @@ function onLogin(response) {
 // ### BUSINESS LOGIC ###
 function renderMFS() {
     // First get the list of friends for this user with the Graph API
-    FB.api('/me/taggable_friends', function(response) {
+    FB.api('/me/taggable_friends?fields='+TAGGABLE_FRIEND_FIELDS.toString(),
+            function(response) {
         var container = document.getElementById('mfs');
         var mfsForm = document.createElement('form');
         mfsForm.id = 'mfsForm';
 
         // Iterate through the array of friends object and create a checkbox for each one.
-        for(var i = 0; i < Math.min(response.data.length, 10); i++) {
+        for(var i = 0; i < response.data.length; i++) {
             var friendItem = document.createElement('div');
             friendItem.id = 'friend_' + response.data[i].id;
             friendItem.innerHTML = '<input type="checkbox" name="friends" value="'
@@ -61,6 +63,25 @@ function renderMFS() {
         sendButton.onclick = sendRequest;
         mfsForm.appendChild(sendButton);
     });
+}
+
+function createProfileObjects(taggableFriend) {
+    // https://developers.facebook.com/docs/reference/opengraph/object-type/profile
+    FB.api('/me/objects/profile', 'post',
+            {
+                object: {
+                    'og:title': 'Connection Made! ' + new Date(),
+                    'og:image': taggableFriend.picture.data.url,
+                    'profile:first_name': taggableFriend.first_name,
+                    'profile:last_name': taggableFriend.last_name,
+                    'profile:username': taggableFriend.name
+                },
+                privacy: {
+                    'value': 'SELF'
+                }
+            },
+            log
+    );
 }
 
 function sendRequest() {
@@ -80,10 +101,9 @@ function sendRequest() {
             {
                 message: "this is why I am connecting you people",
                 privacy: {
-                    'value': 'CUSTOM',
-                    'allow': sendUIDs.toString() // CSV of whitelisted users
+                    'value': 'SELF'
                 },
-                profile: sendUIDs, // TODO: should be profile links
+                profile: [], // TODO: pull in response.id from createProfileObjects
                 tags: sendUIDs.toString() // tagged users CSV
             },
             log
