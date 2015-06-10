@@ -90,8 +90,11 @@ function sendRequest() {
                 // Make post with profile.
                 FB.api('me/wild-karma-dev:connect', 'post',
                         {
-                            profile: [id, id] // Or profile: id
-                            // privacy: {'value': 'SELF'}
+                            profile: [id, id], // Or profile: id
+                            privacy: {
+                                'value': 'CUSTOM',
+                                'allow': id // string or CSV of users that CAN see
+                            }
                         },
                         log
                 );
