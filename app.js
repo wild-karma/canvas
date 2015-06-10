@@ -1,12 +1,17 @@
 // ### GLOBAL ENVIRONMENT SETTINGS ###
 APP_ID_DEV = '1620490794859089';
 APP_ID_PROD = '1619998651574970';
+APP_NS_DEV = 'wild-karma-dev';
+APP_NS_PROD = 'wild-karma';
 
 
 // ### GLOBAL ENVIRONMENT METHODS ###
 var appId = function() {
     return isDev ? APP_ID_DEV : APP_ID_PROD;
 };
+var appNs = function() {
+    return isDev ? APP_NS_DEV : APP_NS_PROD;
+}
 var isDev = function() {
     return document.location.hostname.indexOf("localhost") > -1;
 };
@@ -60,44 +65,27 @@ function renderMFS() {
 
 function sendRequest() {
     // Get the list of selected friends
-    var sendUIDs = '';
+    var sendUIDs = [];
     var mfsForm = document.getElementById('mfsForm');
     for(var i = 0; i < mfsForm.friends.length; i++) {
         if(mfsForm.friends[i].checked) {
-            // To get display name:
-            // mfsForm.friends[i].nextSibling.data 
-            sendUIDs += mfsForm.friends[i].value + ',';
+            sendUIDs.push(mfsForm.friends[i].value);
         }
     }
 
-    // Create profile object.
-    FB.api('me/objects/profile', 'post',
+    // make connection post on behalf of user
+    // https://developers.facebook.com/docs/graph-api/reference/v2.3/user/feed#publish
+    var ogActionUri = '/me/' + appNs() + ':connect';
+    FB.api(ogActionUri, 'post',
             {
-                object: {
-                    'og:title': 'Connection Made! ' + new Date(),
-                    'og:image': 'https://s-static.ak.fbcdn.net/images/devsite/attachment_blank.png',
-                    'profile:first_name': 'Steve',
-                    'profile:last_name': 'Steverson',
-                    'profile:username': 'foo@bar.io',
-                    'profile:gender': 'Male'
-                }
+                message: "this is why I am connecting you people",
+                privacy: {
+                    'value': 'CUSTOM',
+                    'allow': sendUIDs.toString() // CSV of whitelisted users
+                },
+                profile: sendUIDs, // TODO: should be profile links
+                tags: sendUIDs.toString() // tagged users CSV
             },
-            function(response) {
-                log(response);
-
-                var id = response['id'];
-
-                // Make post with profile.
-                FB.api('me/wild-karma-dev:connect', 'post',
-                        {
-                            profile: [id, id], // Or profile: id
-                            privacy: {
-                                'value': 'CUSTOM',
-                                'allow': id // string or CSV of users that CAN see
-                            }
-                        },
-                        log
-                );
-            }
+            log
     );
 }
