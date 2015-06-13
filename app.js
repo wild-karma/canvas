@@ -26,8 +26,8 @@ var isDev = function() {
 
 
 // ### COMMON HELPER METHODS ###
-function log(obj) {
-    console.log(obj);
+function error(obj) {
+    console.error(obj);
 }
 
 
@@ -92,12 +92,22 @@ function renderMFS() {
         var sendButton = document.createElement('input');
         sendButton.type = 'button';
         sendButton.value = 'Connect Friends';
-        sendButton.onclick = sendRequest;
+        sendButton.onclick = createConnectionObjects;
         mfsForm.appendChild(sendButton);
     });
 }
 
-function createProfileObjects(taggableFriend) {
+function createConnectionObjects() {
+    // TODO: full version use reactive pattern with backing UI state store
+    var mfsForm = document.getElementById(MULTI_FRIEND_SELECT_DOM_FORM_ID);
+    for(var i = 0; i < mfsForm.friends.length; i++) {
+        if(mfsForm.friends[i].checked) {
+            createConnectionObject(taggableFriends[i]);
+        }
+    }
+}
+
+function createConnectionObject(taggableFriend) {
     // https://developers.facebook.com/docs/reference/opengraph/object-type/profile
     FB.api('/me/objects/profile', 'post',
             {
@@ -112,18 +122,31 @@ function createProfileObjects(taggableFriend) {
                     'value': 'SELF'
                 }
             },
-            log
+            function (response) {
+                if (response && !response.error) {
+                    // TODO add funnel events
+                    // https://developers.facebook.com/docs/reference/javascript/FB.AppEvents.LogEvent
+
+                    var createdObjId = response['id'];
+                    createdProfileObjectIds.push(createdObjId);
+                    publishConnection();
+                } else {
+                    // TODO user facing error handling
+                    // https://developers.facebook.com/docs/graph-api/using-graph-api/v2.3#receiving-errorcodes
+                    error(response.error);
+                }
+            }
     );
 }
 
-function sendRequest() {
-    // Get the list of selected friends
-    var sendUIDs = [];
-    var mfsForm = document.getElementById('mfsForm');
-    for(var i = 0; i < mfsForm.friends.length; i++) {
-        if(mfsForm.friends[i].checked) {
-            sendUIDs.push(mfsForm.friends[i].value);
-        }
+function publishConnection() {
+    // get the list of selected friends
+    var taggableFriendCodes = getTaggableFriendCodes();
+
+    // ensure all connection objects have been created
+    // LDP hacker async enforcement
+    if (createdProfileObjectIds.length !== taggableFriendCodes.length) {
+        return;
     }
 
     // make connection post on behalf of user
@@ -133,11 +156,24 @@ function sendRequest() {
             {
                 message: "this is why I am connecting you people",
                 privacy: {
-                    'value': 'SELF'
+                    'value': 'SELF' // will be exposed to SELF and anyone tagged
                 },
-                profile: [], // TODO: pull in response.id from createProfileObjects
-                tags: sendUIDs.toString() // tagged users CSV
+                profile: createdProfileObjectIds,
+                tags: taggableFriendCodes.toString()
             },
-            log
+            function (response) {
+                clearSessionState();
+
+                if (response && !response.error) {
+                    // TODO add funnel events
+                    // https://developers.facebook.com/docs/reference/javascript/FB.AppEvents.LogEvent
+
+                    alert('Connection made.');
+                } else {
+                    // TODO user facing error handling
+                    // https://developers.facebook.com/docs/graph-api/using-graph-api/v2.3#receiving-errorcodes
+                    error(response.error);
+                }
+            }
     );
 }
