@@ -1,9 +1,16 @@
 // ### GLOBAL ENVIRONMENT SETTINGS ###
-APP_ID_DEV = '1620490794859089';
-APP_ID_PROD = '1619998651574970';
-APP_NS_DEV = 'wild-karma-dev';
-APP_NS_PROD = 'wild-karma';
-TAGGABLE_FRIEND_FIELDS = ['id', 'first_name', 'last_name', 'name', 'picture'];
+var APP_ID_DEV = '1620490794859089';
+var APP_ID_PROD = '1619998651574970';
+var APP_NS_DEV = 'wild-karma-dev';
+var APP_NS_PROD = 'wild-karma';
+var MULTI_FRIEND_SELECT_DOM_CONTAINER_ID  = 'multi-friend-select';
+var MULTI_FRIEND_SELECT_DOM_FORM_ID = MULTI_FRIEND_SELECT_DOM_CONTAINER_ID + '-form';
+var TAGGABLE_FRIEND_FIELDS = ['id', 'first_name', 'last_name', 'name', 'picture'];
+
+
+//### GLOBAL ENVIRONMENT VARIABLES ###
+var createdProfileObjectIds = [];
+var taggableFriends = [];
 
 
 // ### GLOBAL ENVIRONMENT METHODS ###
