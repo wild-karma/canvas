@@ -45,13 +45,38 @@ function onLogin(response) {
 
 
 // ### BUSINESS LOGIC ###
+function clearSelectedFriends() {
+    var mfsForm = document.getElementById(MULTI_FRIEND_SELECT_DOM_FORM_ID);
+    for(var i = 0; i < mfsForm.friends.length; i++) {
+        mfsForm.friends[i].checked = false;
+    }
+}
+
+function clearSessionState() {
+    createdProfileObjectIds.length = 0; // clear in place - http://stackoverflow.com/a/1232046
+    clearSelectedFriends();
+}
+
+function getTaggableFriendCodes() {
+    var taggableFriendCodes = [];
+    var mfsForm = document.getElementById(MULTI_FRIEND_SELECT_DOM_FORM_ID);
+    for(var i = 0; i < mfsForm.friends.length; i++) {
+        if(mfsForm.friends[i].checked) {
+            taggableFriendCodes.push(mfsForm.friends[i].value);
+        }
+    }
+    return taggableFriendCodes;
+}
+
 function renderMFS() {
     // First get the list of friends for this user with the Graph API
     FB.api('/me/taggable_friends?fields='+TAGGABLE_FRIEND_FIELDS.toString(),
             function(response) {
-        var container = document.getElementById('mfs');
+        taggableFriends = response.data;
+
+        var container = document.getElementById(MULTI_FRIEND_SELECT_DOM_CONTAINER_ID);
         var mfsForm = document.createElement('form');
-        mfsForm.id = 'mfsForm';
+        mfsForm.id = MULTI_FRIEND_SELECT_DOM_FORM_ID;
 
         // Iterate through the array of friends object and create a checkbox for each one.
         for(var i = 0; i < response.data.length; i++) {
