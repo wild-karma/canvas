@@ -1,20 +1,33 @@
 // ### GLOBAL ENVIRONMENT SETTINGS ###
-APP_ID_DEV = '1620490794859089';
-APP_ID_PROD = '1619998651574970';
+var APP_ID_DEV = '1620490794859089';
+var APP_ID_PROD = '1619998651574970';
+var APP_NS_DEV = 'wild-karma-dev';
+var APP_NS_PROD = 'wild-karma';
+var MULTI_FRIEND_SELECT_DOM_CONTAINER_ID  = 'multi-friend-select';
+var MULTI_FRIEND_SELECT_DOM_FORM_ID = MULTI_FRIEND_SELECT_DOM_CONTAINER_ID + '-form';
+var TAGGABLE_FRIEND_FIELDS = ['id', 'first_name', 'last_name', 'name', 'picture'];
+
+
+//### GLOBAL ENVIRONMENT VARIABLES ###
+var createdProfileObjectIds = [];
+var taggableFriends = [];
 
 
 // ### GLOBAL ENVIRONMENT METHODS ###
 var appId = function() {
     return isDev ? APP_ID_DEV : APP_ID_PROD;
 };
+var appNs = function() {
+    return isDev ? APP_NS_DEV : APP_NS_PROD;
+}
 var isDev = function() {
-    return document.location.hostname == "localhost";
+    return document.location.hostname.indexOf("localhost") > -1;
 };
 
 
 // ### COMMON HELPER METHODS ###
-function callback(response) {
-    console.log(response);
+function error(obj) {
+    console.error(obj);
 }
 
 
@@ -32,15 +45,41 @@ function onLogin(response) {
 
 
 // ### BUSINESS LOGIC ###
+function clearSelectedFriends() {
+    var mfsForm = document.getElementById(MULTI_FRIEND_SELECT_DOM_FORM_ID);
+    for(var i = 0; i < mfsForm.friends.length; i++) {
+        mfsForm.friends[i].checked = false;
+    }
+}
+
+function clearSessionState() {
+    createdProfileObjectIds.length = 0; // clear in place - http://stackoverflow.com/a/1232046
+    clearSelectedFriends();
+}
+
+function getTaggableFriendCodes() {
+    var taggableFriendCodes = [];
+    var mfsForm = document.getElementById(MULTI_FRIEND_SELECT_DOM_FORM_ID);
+    for(var i = 0; i < mfsForm.friends.length; i++) {
+        if(mfsForm.friends[i].checked) {
+            taggableFriendCodes.push(mfsForm.friends[i].value);
+        }
+    }
+    return taggableFriendCodes;
+}
+
 function renderMFS() {
     // First get the list of friends for this user with the Graph API
-    FB.api('/me/taggable_friends', function(response) {
-        var container = document.getElementById('mfs');
+    FB.api('/me/taggable_friends?fields='+TAGGABLE_FRIEND_FIELDS.toString(),
+            function(response) {
+        taggableFriends = response.data;
+
+        var container = document.getElementById(MULTI_FRIEND_SELECT_DOM_CONTAINER_ID);
         var mfsForm = document.createElement('form');
-        mfsForm.id = 'mfsForm';
+        mfsForm.id = MULTI_FRIEND_SELECT_DOM_FORM_ID;
 
         // Iterate through the array of friends object and create a checkbox for each one.
-        for(var i = 0; i < Math.min(response.data.length, 10); i++) {
+        for(var i = 0; i < response.data.length; i++) {
             var friendItem = document.createElement('div');
             friendItem.id = 'friend_' + response.data[i].id;
             friendItem.innerHTML = '<input type="checkbox" name="friends" value="'
@@ -52,28 +91,89 @@ function renderMFS() {
         // Create a button to send the Request(s)
         var sendButton = document.createElement('input');
         sendButton.type = 'button';
-        sendButton.value = 'Send Request';
-        sendButton.onclick = sendRequest;
+        sendButton.value = 'Connect Friends';
+        sendButton.onclick = createConnectionObjects;
         mfsForm.appendChild(sendButton);
     });
 }
 
-function sendRequest() {
-    // Get the list of selected friends
-    var sendUIDs = '';
-    var mfsForm = document.getElementById('mfsForm');
+function createConnectionObjects() {
+    // TODO: full version use reactive pattern with backing UI state store
+    var mfsForm = document.getElementById(MULTI_FRIEND_SELECT_DOM_FORM_ID);
     for(var i = 0; i < mfsForm.friends.length; i++) {
         if(mfsForm.friends[i].checked) {
-            sendUIDs += mfsForm.friends[i].value + ',';
+            createConnectionObject(taggableFriends[i]);
         }
     }
+}
 
-    // Use FB.ui to send the Request(s)
-    // TODO You cannot send app requests for non-game apps. This appears to be the only way for now.
-    FB.ui({
-        method: 'send',
-        to: sendUIDs,
-        link: 'https://google.com',
-        title: 'Check This Person Out!',
-    }, callback);
+function createConnectionObject(taggableFriend) {
+    // https://developers.facebook.com/docs/reference/opengraph/object-type/profile
+    FB.api('/me/objects/profile', 'post',
+            {
+                object: {
+                    'og:title': 'Connection Made! ' + new Date(),
+                    'og:image': taggableFriend.picture.data.url,
+                    'profile:first_name': taggableFriend.first_name,
+                    'profile:last_name': taggableFriend.last_name,
+                    'profile:username': taggableFriend.name
+                },
+                privacy: {
+                    'value': 'SELF'
+                }
+            },
+            function (response) {
+                if (response && !response.error) {
+                    // TODO add funnel events
+                    // https://developers.facebook.com/docs/reference/javascript/FB.AppEvents.LogEvent
+
+                    var createdObjId = response['id'];
+                    createdProfileObjectIds.push(createdObjId);
+                    publishConnection();
+                } else {
+                    // TODO user facing error handling
+                    // https://developers.facebook.com/docs/graph-api/using-graph-api/v2.3#receiving-errorcodes
+                    error(response.error);
+                }
+            }
+    );
+}
+
+function publishConnection() {
+    // get the list of selected friends
+    var taggableFriendCodes = getTaggableFriendCodes();
+
+    // ensure all connection objects have been created
+    // LDP hacker async enforcement
+    if (createdProfileObjectIds.length !== taggableFriendCodes.length) {
+        return;
+    }
+
+    // make connection post on behalf of user
+    // https://developers.facebook.com/docs/graph-api/reference/v2.3/user/feed#publish
+    var ogActionUri = '/me/' + appNs() + ':connect';
+    FB.api(ogActionUri, 'post',
+            {
+                message: "this is why I am connecting you people",
+                privacy: {
+                    'value': 'SELF' // will be exposed to SELF and anyone tagged
+                },
+                profile: createdProfileObjectIds,
+                tags: taggableFriendCodes.toString()
+            },
+            function (response) {
+                clearSessionState();
+
+                if (response && !response.error) {
+                    // TODO add funnel events
+                    // https://developers.facebook.com/docs/reference/javascript/FB.AppEvents.LogEvent
+
+                    alert('Connection made.');
+                } else {
+                    // TODO user facing error handling
+                    // https://developers.facebook.com/docs/graph-api/using-graph-api/v2.3#receiving-errorcodes
+                    error(response.error);
+                }
+            }
+    );
 }

@@ -18,8 +18,8 @@
                 } else {
                     FB.login(function(response) {
                         onLogin(response);
-                    }, {scope: 'user_friends'});
-                    // https://developers.facebook.com/docs/facebook-login/permissions/v2.3#reference-user_friends
+                    }, {scope: 'publish_actions'});
+                    // TODO: JIT permission request?
                 }
             });
         };
@@ -39,6 +39,6 @@
     </head>
     <body>
         <h1 id="fb-welcome"></h1>
-        <div id="mfs"></div>
+        <div id="multi-friend-select"></div>
     </body>
 </html>
