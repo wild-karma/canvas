@@ -80,10 +80,20 @@ function renderMFS() {
 
         // Iterate through the array of friends object and create a checkbox for each one.
         for(var i = 0; i < response.data.length; i++) {
+
+            // Image
+            var image = document.createElement('img');
+            image.src = response.data[i].picture.data.url;
+            mfsForm.appendChild(image);
+            
+            // Checkbox and name
             var friendItem = document.createElement('div');
             friendItem.id = 'friend_' + response.data[i].id;
-            friendItem.innerHTML = '<input type="checkbox" name="friends" value="'
+
+            var checkbox = '<input type="checkbox" name="friends" value="'
                 + response.data[i].id + '" />' + response.data[i].name;
+            friendItem.innerHTML = checkbox;
+
             mfsForm.appendChild(friendItem);
         }
         container.appendChild(mfsForm);
