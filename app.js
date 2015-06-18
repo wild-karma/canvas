@@ -6,6 +6,7 @@ var APP_NS_PROD = 'wild-karma';
 var MULTI_FRIEND_SELECT_DOM_CONTAINER_ID  = 'multi-friend-select';
 var MULTI_FRIEND_SELECT_DOM_FORM_ID = MULTI_FRIEND_SELECT_DOM_CONTAINER_ID + '-form';
 var TAGGABLE_FRIEND_FIELDS = ['id', 'first_name', 'last_name', 'name', 'picture'];
+var UNKNOWN_USER_ID = 0;
 
 
 //### GLOBAL ENVIRONMENT VARIABLES ###
@@ -25,6 +26,37 @@ var isDev = function() {
 };
 
 
+//### ANALYTICS CONSTANTS ###
+var TRACK_APP_NS = 'appNameSpace';
+var TRACK_CONNECTION_CREATED = 'connectionCreated';
+var TRACK_LOGIN = 'login';
+var TRACK_FRIEND_SELECT_DISPLAY = 'friendSelectDisplay';
+
+
+//### ANALYTICS METHODS ###
+var trackConnectionCreated = function(success) {
+    var params = {};
+    params[FB.AppEvents.ParameterNames.CONTENT_ID] = currentUser ? currentUser.id : UNKNOWN_USER_ID;
+    params[FB.AppEvents.ParameterNames.SUCCESS] = success;
+    params[TRACK_APP_NS] = appNs();
+    FB.AppEvents.logEvent(TRACK_CONNECTION_CREATED, null, params);
+}
+var trackFriendSelectDisplay = function(success) {
+    var params = {};
+    params[FB.AppEvents.ParameterNames.CONTENT_ID] = currentUser ? currentUser.id : UNKNOWN_USER_ID;
+    params[FB.AppEvents.ParameterNames.SUCCESS] = success;
+    params[TRACK_APP_NS] = appNs();
+    FB.AppEvents.logEvent(TRACK_FRIEND_SELECT_DISPLAY, null, params);
+}
+var trackLogin = function(success) {
+    var params = {};
+    params[FB.AppEvents.ParameterNames.CONTENT_ID] = currentUser ? currentUser.id : UNKNOWN_USER_ID;
+    params[FB.AppEvents.ParameterNames.SUCCESS] = success;
+    params[TRACK_APP_NS] = appNs();
+    FB.AppEvents.logEvent(TRACK_LOGIN, null, params);
+}
+
+
 // ### COMMON HELPER METHODS ###
 function error(obj) {
     console.error(obj);
@@ -36,11 +68,19 @@ function onLogin(response) {
     if (response.status == 'connected') {
         FB.api('/me?fields='+TAGGABLE_FRIEND_FIELDS.toString(), function(data) {
             currentUser = data;
+            trackLogin(1);
+
             var welcomeBlock = document.getElementById('fb-welcome');
             welcomeBlock.innerHTML = 'Hello, ' + currentUser.first_name + '!';
 
             renderMFS();
+            trackFriendSelectDisplay(1);
+            // HYPOTHESIS: one would expect to see
+            // trackLogin == trackFriendSelectDisplay
+            // count if technology is working correctly
         });
+    } else {
+        trackLogin(0);
     }
 }
 
@@ -135,11 +175,13 @@ function publishConnection() {
             },
             function (response) {
                 if (response && !response.error) {
-                    // TODO add funnel events
-                    // https://developers.facebook.com/docs/reference/javascript/FB.AppEvents.LogEvent
+                    trackConnectionCreated(1);
+                    // GOAL : trackConnectionCreated / trackFriendSelectDisplay > 0.25 : for prod namespace
 
                     alert('Connection made.');
                 } else {
+                    trackConnectionCreated(0);
+
                     // TODO user facing error handling
                     // https://developers.facebook.com/docs/graph-api/using-graph-api/v2.3#receiving-errorcodes
                     error(response.error);
