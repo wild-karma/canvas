@@ -20,6 +20,8 @@
                         onLogin(response);
                     }, {scope: 'publish_actions'});
                     // TODO: JIT permission request?
+
+                    trackEvent(TRACK_LOGIN_LANDING, 1);
                 }
             });
         };
