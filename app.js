@@ -30,34 +30,31 @@ var isDev = function() {
 var TRACK_APP_NS = 'appNameSpace';
 var TRACK_CONNECTION_CREATED = 'connectionCreated';
 var TRACK_LOGIN = 'login';
+var TRACK_LOGIN_LANDING = 'login_landing';
 var TRACK_FRIEND_SELECT_DISPLAY = 'friendSelectDisplay';
 
 
 //### ANALYTICS METHODS ###
-var trackConnectionCreated = function(success) {
+var trackEvent = function(type, success) {
     var params = {};
-    params[FB.AppEvents.ParameterNames.CONTENT_ID] = currentUser ? currentUser.id : UNKNOWN_USER_ID;
+    // https://developers.facebook.com/docs/reference/javascript/FB.AppEvents.LogEvent#parameters
+    params[FB.AppEvents.ParameterNames.CONTENT_ID] = getCurrentUserId();
     params[FB.AppEvents.ParameterNames.SUCCESS] = success;
     params[TRACK_APP_NS] = appNs();
-    FB.AppEvents.logEvent(TRACK_CONNECTION_CREATED, null, params);
-}
-var trackFriendSelectDisplay = function(success) {
-    var params = {};
-    params[FB.AppEvents.ParameterNames.CONTENT_ID] = currentUser ? currentUser.id : UNKNOWN_USER_ID;
-    params[FB.AppEvents.ParameterNames.SUCCESS] = success;
-    params[TRACK_APP_NS] = appNs();
-    FB.AppEvents.logEvent(TRACK_FRIEND_SELECT_DISPLAY, null, params);
-}
-var trackLogin = function(success) {
-    var params = {};
-    params[FB.AppEvents.ParameterNames.CONTENT_ID] = currentUser ? currentUser.id : UNKNOWN_USER_ID;
-    params[FB.AppEvents.ParameterNames.SUCCESS] = success;
-    params[TRACK_APP_NS] = appNs();
-    FB.AppEvents.logEvent(TRACK_LOGIN, null, params);
+    if (!isDev()) { // will bomb if not in full FB Canvas environment
+        FB.AppEvents.logEvent(type, null, params);
+    }
 }
 
 
 // ### COMMON HELPER METHODS ###
+function getCurrentUserId() {
+    if (currentUser && currentUser.hasOwnProperty('id')) {
+        return currentUser.id;
+    }
+    return UNKNOWN_USER_ID;
+}
+
 function error(obj) {
     console.error(obj);
 }
@@ -68,19 +65,19 @@ function onLogin(response) {
     if (response.status == 'connected') {
         FB.api('/me?fields='+TAGGABLE_FRIEND_FIELDS.toString(), function(data) {
             currentUser = data;
-            trackLogin(1);
+            trackEvent(TRACK_LOGIN, 1);
 
             var welcomeBlock = document.getElementById('fb-welcome');
             welcomeBlock.innerHTML = 'Hello, ' + currentUser.first_name + '!';
 
             renderMFS();
-            trackFriendSelectDisplay(1);
+            trackEvent(TRACK_FRIEND_SELECT_DISPLAY, 1);
             // HYPOTHESIS: one would expect to see
-            // trackLogin == trackFriendSelectDisplay
+            // TRACK_LOGIN ~ TRACK_FRIEND_SELECT_DISPLAY
             // count if technology is working correctly
         });
     } else {
-        trackLogin(0);
+        trackEvent(TRACK_LOGIN, 0);
     }
 }
 
@@ -129,7 +126,7 @@ function renderMFS() {
             var image = document.createElement('img');
             image.src = response.data[i].picture.data.url;
             mfsForm.appendChild(image);
-            
+
             // Checkbox and name
             var friendItem = document.createElement('div');
             friendItem.id = 'friend_' + response.data[i].id;
@@ -175,12 +172,12 @@ function publishConnection() {
             },
             function (response) {
                 if (response && !response.error) {
-                    trackConnectionCreated(1);
-                    // GOAL : trackConnectionCreated / trackFriendSelectDisplay > 0.25 : for prod namespace
+                    trackEvent(TRACK_CONNECTION_CREATED, 1);
+                    // GOAL : TRACK_CONNECTION_CREATED / TRACK_FRIEND_SELECT_DISPLAY > 0.25 : for prod namespace
 
                     alert('Connection made.');
                 } else {
-                    trackConnectionCreated(0);
+                    trackEvent(TRACK_CONNECTION_CREATED, 0);
 
                     // TODO user facing error handling
                     // https://developers.facebook.com/docs/graph-api/using-graph-api/v2.3#receiving-errorcodes
