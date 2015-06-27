@@ -6,10 +6,11 @@ var APP_NS_PROD = 'wild-karma';
 var MULTI_FRIEND_SELECT_DOM_CONTAINER_ID  = 'multi-friend-select';
 var MULTI_FRIEND_SELECT_DOM_FORM_ID = MULTI_FRIEND_SELECT_DOM_CONTAINER_ID + '-form';
 var TAGGABLE_FRIEND_FIELDS = ['id', 'first_name', 'last_name', 'name', 'picture'];
+var UNKNOWN_USER_ID = 0;
 
 
 //### GLOBAL ENVIRONMENT VARIABLES ###
-var createdProfileObjectIds = [];
+var currentUser = {};
 var taggableFriends = [];
 
 
@@ -25,7 +26,36 @@ var isDev = function() {
 };
 
 
+//### ANALYTICS CONSTANTS ###
+var TRACK_APP_NS = 'appNameSpace';
+var TRACK_CONNECTION_CREATED = 'connectionCreated';
+var TRACK_CONNECTION_SUGGESTED = 'connectionSuggested';
+var TRACK_LOGIN = 'login';
+var TRACK_LOGIN_LANDING = 'login_landing';
+var TRACK_FRIEND_SELECT_DISPLAY = 'friendSelectDisplay';
+
+
+//### ANALYTICS METHODS ###
+var trackEvent = function(type, success) {
+    var params = {};
+    // https://developers.facebook.com/docs/reference/javascript/FB.AppEvents.LogEvent#parameters
+    params[FB.AppEvents.ParameterNames.CONTENT_ID] = getCurrentUserId();
+    params[FB.AppEvents.ParameterNames.SUCCESS] = success;
+    params[TRACK_APP_NS] = appNs();
+    if (!isDev()) { // will bomb if not in full FB Canvas environment
+        FB.AppEvents.logEvent(type, null, params);
+    }
+}
+
+
 // ### COMMON HELPER METHODS ###
+function getCurrentUserId() {
+    if (currentUser && currentUser.hasOwnProperty('id')) {
+        return currentUser.id;
+    }
+    return UNKNOWN_USER_ID;
+}
+
 function error(obj) {
     console.error(obj);
 }
@@ -34,38 +64,74 @@ function error(obj) {
 // ### APP STATE METHODS ###
 function onLogin(response) {
     if (response.status == 'connected') {
-        FB.api('/me?fields=first_name', function(data) {
+        FB.api('/me?fields='+TAGGABLE_FRIEND_FIELDS.toString(), function(data) {
+            currentUser = data;
+            trackEvent(TRACK_LOGIN, 1);
+
             var welcomeBlock = document.getElementById('fb-welcome');
-            welcomeBlock.innerHTML = 'Hello, ' + data.first_name + '!';
+            welcomeBlock.innerHTML = 'Hello, ' + currentUser.first_name + '!';
 
             renderMFS();
+            trackEvent(TRACK_FRIEND_SELECT_DISPLAY, 1);
+            // HYPOTHESIS: one would expect to see
+            // TRACK_LOGIN ~ TRACK_FRIEND_SELECT_DISPLAY
+            // count if technology is working correctly
         });
+    } else {
+        trackEvent(TRACK_LOGIN, 0);
     }
 }
 
 
 // ### BUSINESS LOGIC ###
-function clearSelectedFriends() {
+function clearSession() {
+    // clear friend selection
     var mfsForm = document.getElementById(MULTI_FRIEND_SELECT_DOM_FORM_ID);
     for(var i = 0; i < mfsForm.friends.length; i++) {
         mfsForm.friends[i].checked = false;
     }
 }
 
-function clearSessionState() {
-    createdProfileObjectIds.length = 0; // clear in place - http://stackoverflow.com/a/1232046
-    clearSelectedFriends();
+function getConnectionReason() {
+    // TODO: get value from user text field
+    return 'this is why you guys should hoook up';
 }
 
-function getTaggableFriendCodes() {
-    var taggableFriendCodes = [];
+function getConnectionType() {
+    // TODO: get value from drop-down
+    return 'romantic entanglement';
+}
+
+function getConnectionTypeDescription() {
+    // TODO: get value from stored dictionary
+    return 'loves bites and so do I';
+}
+
+function getTaggedFriends() {
+    var taggedFriends = [];
     var mfsForm = document.getElementById(MULTI_FRIEND_SELECT_DOM_FORM_ID);
     for(var i = 0; i < mfsForm.friends.length; i++) {
         if(mfsForm.friends[i].checked) {
-            taggableFriendCodes.push(mfsForm.friends[i].value);
+            taggedFriends.push(taggableFriends[i]);
         }
     }
-    return taggableFriendCodes;
+    return taggedFriends;
+}
+
+function getTaggedFriendIds(taggedFriends) {
+    var taggedFriendIds = [];
+    for(var i = 0; i < taggedFriends.length; i++) {
+        taggedFriendIds.push(taggedFriends[i].id);
+    }
+    return taggedFriendIds;
+}
+
+function getTaggedFriendNames(taggedFriends) {
+    var taggedFriendNames = [];
+    for(var i = 0; i < taggedFriends.length; i++) {
+        taggedFriendNames.push(taggedFriends[i].name);
+    }
+    return taggedFriendNames;
 }
 
 function renderMFS() {
@@ -85,7 +151,7 @@ function renderMFS() {
             var image = document.createElement('img');
             image.src = response.data[i].picture.data.url;
             mfsForm.appendChild(image);
-            
+
             // Checkbox and name
             var friendItem = document.createElement('div');
             friendItem.id = 'friend_' + response.data[i].id;
@@ -98,90 +164,67 @@ function renderMFS() {
         }
         container.appendChild(mfsForm);
 
+        // TODO: create reason drop-down - presets and randos
+
         // Create a button to send the Request(s)
         var sendButton = document.createElement('input');
         sendButton.type = 'button';
         sendButton.value = 'Connect Friends';
-        sendButton.onclick = createConnectionObjects;
+        sendButton.onclick = createConnectionObj;
         mfsForm.appendChild(sendButton);
     });
 }
 
-function createConnectionObjects() {
-    // TODO: full version use reactive pattern with backing UI state store
-    var mfsForm = document.getElementById(MULTI_FRIEND_SELECT_DOM_FORM_ID);
-    for(var i = 0; i < mfsForm.friends.length; i++) {
-        if(mfsForm.friends[i].checked) {
-            createConnectionObject(taggableFriends[i]);
-        }
-    }
-}
+function createConnectionObj() {
+    // https://developers.facebook.com/docs/sharing/opengraph/object-api#objectapi-creatinguser
+    // https://developers.facebook.com/docs/sharing/opengraph/object-properties
 
-function createConnectionObject(taggableFriend) {
-    // https://developers.facebook.com/docs/reference/opengraph/object-type/profile
-    FB.api('/me/objects/profile', 'post',
+    var ogObjType = appNs() + ':connection';
+    var ogObjUri = '/me/objects/' + ogObjType;
+
+    FB.api(ogObjUri, 'post',
             {
                 object: {
-                    'og:title': 'Connection Made! ' + new Date(),
-                    'og:image': taggableFriend.picture.data.url,
-                    'profile:first_name': taggableFriend.first_name,
-                    'profile:last_name': taggableFriend.last_name,
-                    'profile:username': taggableFriend.name
-                },
-                privacy: {
-                    'value': 'SELF'
-                }
+                    'og:title': getConnectionType(),
+                    'og:description': getConnectionTypeDescription()
+                } // TODO: add og:image ?
             },
             function (response) {
                 if (response && !response.error) {
-                    // TODO add funnel events
-                    // https://developers.facebook.com/docs/reference/javascript/FB.AppEvents.LogEvent
-
-                    var createdObjId = response['id'];
-                    createdProfileObjectIds.push(createdObjId);
-                    publishConnection();
+                    trackEvent(TRACK_CONNECTION_CREATED, 1);
+                    publishStory([response.id]);
                 } else {
-                    // TODO user facing error handling
-                    // https://developers.facebook.com/docs/graph-api/using-graph-api/v2.3#receiving-errorcodes
+                    trackEvent(TRACK_CONNECTION_CREATED, 0);
                     error(response.error);
                 }
             }
     );
 }
 
-function publishConnection() {
-    // get the list of selected friends
-    var taggableFriendCodes = getTaggableFriendCodes();
+function publishStory(createdObjIds) {
+    // https://developers.facebook.com/docs/graph-api/reference/v2.3/post
+    // https://developers.facebook.com/docs/sharing/opengraph/using-actions#publish
 
-    // ensure all connection objects have been created
-    // LDP hacker async enforcement
-    if (createdProfileObjectIds.length !== taggableFriendCodes.length) {
-        return;
-    }
-
-    // make connection post on behalf of user
-    // https://developers.facebook.com/docs/graph-api/reference/v2.3/user/feed#publish
-    var ogActionUri = '/me/' + appNs() + ':connect';
-    FB.api(ogActionUri, 'post',
+    var ogActType = appNs() + ':suggest';
+    var ogActUri = '/me/' + ogActType;
+    FB.api(ogActUri, 'post',
             {
-                message: "this is why I am connecting you people",
+                connection: createdObjIds,
+                start_time: (new Date()).toJSON(),
+                expires_in: 30, // past-tense in 30 seconds
+                message: getConnectionReason(),
                 privacy: {
                     'value': 'SELF' // will be exposed to SELF and anyone tagged
                 },
-                profile: createdProfileObjectIds,
-                tags: taggableFriendCodes.toString()
-            },
-            function (response) {
-                clearSessionState();
-
+                tags: getTaggedFriendIds(getTaggedFriends()).toString()
+            }, function (response) {
+                clearSession();
+        
                 if (response && !response.error) {
-                    // TODO add funnel events
-                    // https://developers.facebook.com/docs/reference/javascript/FB.AppEvents.LogEvent
-
-                    alert('Connection made.');
+                    trackEvent(TRACK_CONNECTION_SUGGESTED, 1);
+                    alert('Connection Made');
                 } else {
-                    // TODO user facing error handling
-                    // https://developers.facebook.com/docs/graph-api/using-graph-api/v2.3#receiving-errorcodes
+                    trackEvent(TRACK_CONNECTION_SUGGESTED, 0);
                     error(response.error);
                 }
             }
