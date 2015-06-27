@@ -1,12 +1,14 @@
 // ### GLOBAL ENVIRONMENT SETTINGS ###
 var APP_ID_DEV = '1620490794859089';
 var APP_ID_PROD = '1619998651574970';
+var APP_NAME = 'Wild Karma';
 var APP_NS_DEV = 'wild-karma-dev';
 var APP_NS_PROD = 'wild-karma';
 var MULTI_FRIEND_SELECT_DOM_CONTAINER_ID  = 'multi-friend-select';
 var MULTI_FRIEND_SELECT_DOM_FORM_ID = MULTI_FRIEND_SELECT_DOM_CONTAINER_ID + '-form';
 var TAGGABLE_FRIEND_FIELDS = ['id', 'first_name', 'last_name', 'name', 'picture'];
 var UNKNOWN_USER_ID = 0;
+var WELCOME_DOM_CONTAINER_ID = 'welcome';
 
 
 //### GLOBAL ENVIRONMENT VARIABLES ###
@@ -20,7 +22,7 @@ var appId = function() {
 };
 var appNs = function() {
     return isDev ? APP_NS_DEV : APP_NS_PROD;
-}
+};
 var isDev = function() {
     return document.location.hostname.indexOf("localhost") > -1;
 };
@@ -68,8 +70,9 @@ function onLogin(response) {
             currentUser = data;
             trackEvent(TRACK_LOGIN, 1);
 
-            var welcomeBlock = document.getElementById('fb-welcome');
-            welcomeBlock.innerHTML = 'Hello, ' + currentUser.first_name + '!';
+            var welcomeBlock = document.getElementById(WELCOME_DOM_CONTAINER_ID);
+            welcomeBlock.innerHTML = 'Hi, ' + currentUser.first_name + '.'
+                + ' Help your friends meet new people with ' + APP_NAME + '.';
 
             renderMFS();
             trackEvent(TRACK_FRIEND_SELECT_DISPLAY, 1);
@@ -146,28 +149,47 @@ function renderMFS() {
 
         // Iterate through the array of friends object and create a checkbox for each one.
         for(var i = 0; i < response.data.length; i++) {
-
-            // Image
-            var image = document.createElement('img');
-            image.src = response.data[i].picture.data.url;
-            mfsForm.appendChild(image);
-
-            // Checkbox and name
+            // friend item container
             var friendItem = document.createElement('div');
+            friendItem.className = 'friendContainer';
             friendItem.id = 'friend_' + response.data[i].id;
 
-            var checkbox = '<input type="checkbox" name="friends" value="'
-                + response.data[i].id + '" />' + response.data[i].name;
-            friendItem.innerHTML = checkbox;
+            // friend image
+            var image = document.createElement('img');
+            image.className = 'friendImage';
+            image.src = response.data[i].picture.data.url;
+            friendItem.appendChild(image);
 
+            // friend right (of image) container
+            var rightContainer = document.createElement('div');
+            rightContainer.className = 'friendRight';
+
+            // checkbox
+            var checkbox = document.createElement('input');
+            checkbox.className = 'friendCheckbox';
+            checkbox.type = 'checkbox';
+            checkbox.name = 'friends';
+            checkbox.value = response.data[i].id;
+            rightContainer.appendChild(checkbox);
+
+            // friend name
+            var name = document.createElement('div');
+            name.className = 'friendName';
+            name.innerHTML = response.data[i].name;
+            rightContainer.appendChild(name);
+
+            friendItem.appendChild(rightContainer);
             mfsForm.appendChild(friendItem);
         }
         container.appendChild(mfsForm);
 
+        // TODO: create load more button to grab from response.paging.next if it exists
         // TODO: create reason drop-down - presets and randos
+        // TODO: create freeform text field
 
         // Create a button to send the Request(s)
         var sendButton = document.createElement('input');
+        sendButton.className = 'sendButton';
         sendButton.type = 'button';
         sendButton.value = 'Connect Friends';
         sendButton.onclick = createConnectionObj;
