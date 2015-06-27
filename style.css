@@ -1,0 +1,30 @@
+#multi-friend-select-form {
+}
+#multi-friend-select-form .friendContainer {
+    border: 1px black dashed;
+    float: left;
+    height: 50px;
+    margin: 5px 10px 5px 0px;
+    overflow: hidden;
+    padding: 5px;
+    width: 150px;
+}
+#multi-friend-select-form .friendContainer .friendImage {
+    float: left;
+    margin: 0px 5px 0px 0px;
+}
+#multi-friend-select-form .friendContainer .friendRight {
+    float: left;
+    white-space: nowrap;
+    width: 95px;
+}
+#multi-friend-select-form .friendContainer .friendRight .friendName {
+    float: left;
+}
+#multi-friend-select-form .friendContainer .friendRight .friendCheckbox {
+    float: left;
+}
+#multi-friend-select-form .sendButton {
+    clear: both;
+    float: left;
+}
