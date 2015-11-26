@@ -72,7 +72,7 @@ function onLogin(response) {
             trackEvent(TRACK_LOGIN, 1);
 
             var welcomeName = document.getElementById(WELCOME_NAME_DOM_CONTAINER_ID);
-            welcomeName.innerText = currentUser.first_name;
+            welcomeName.innerText = ' ' + currentUser.first_name;
 
             var welcomeMessage = document.getElementById(WELCOME_MESSAGE_DOM_CONTAINER_ID);
             welcomeMessage.innerText = 'Help your friends meet new people with '
