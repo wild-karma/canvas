@@ -1,30 +1,29 @@
+body {
+    background: transparent;
+}
+
+.welcome {
+    display: inline;
+}
+
 #multi-friend-select-form {
 }
-#multi-friend-select-form .friendContainer {
-    border: 1px black dashed;
-    float: left;
-    height: 50px;
-    margin: 5px 10px 5px 0px;
+#multi-friend-select-form .friend {
+    cursor: pointer;
     overflow: hidden;
-    padding: 5px;
-    width: 150px;
+    padding: 10px;
+    text-align: center;
 }
-#multi-friend-select-form .friendContainer .friendImage {
-    float: left;
-    margin: 0px 5px 0px 0px;
+#multi-friend-select-form .friend .friendButton {
 }
-#multi-friend-select-form .friendContainer .friendRight {
-    float: left;
-    white-space: nowrap;
-    width: 95px;
+#multi-friend-select-form .friend .image {
 }
-#multi-friend-select-form .friendContainer .friendRight .friendName {
-    float: left;
+#multi-friend-select-form .friend .name {
 }
-#multi-friend-select-form .friendContainer .friendRight .friendCheckbox {
-    float: left;
+#multi-friend-select-form .friend .checkbox {
+    display: none;
 }
-#multi-friend-select-form .sendButton {
-    clear: both;
-    float: left;
+#multi-friend-select-form .send-button {
+    margin: 0 auto;
+    max-width: 400px;
 }

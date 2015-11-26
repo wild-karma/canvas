@@ -8,7 +8,8 @@ var MULTI_FRIEND_SELECT_DOM_CONTAINER_ID  = 'multi-friend-select';
 var MULTI_FRIEND_SELECT_DOM_FORM_ID = MULTI_FRIEND_SELECT_DOM_CONTAINER_ID + '-form';
 var TAGGABLE_FRIEND_FIELDS = ['id', 'first_name', 'last_name', 'name', 'picture'];
 var UNKNOWN_USER_ID = 0;
-var WELCOME_DOM_CONTAINER_ID = 'welcome';
+var WELCOME_MESSAGE_DOM_CONTAINER_ID = 'welcome-message';
+var WELCOME_NAME_DOM_CONTAINER_ID = 'welcome-name';
 
 
 //### GLOBAL ENVIRONMENT VARIABLES ###
@@ -47,7 +48,7 @@ var trackEvent = function(type, success) {
     if (!isDev()) { // will bomb if not in full FB Canvas environment
         FB.AppEvents.logEvent(type, null, params);
     }
-}
+};
 
 
 // ### COMMON HELPER METHODS ###
@@ -70,9 +71,12 @@ function onLogin(response) {
             currentUser = data;
             trackEvent(TRACK_LOGIN, 1);
 
-            var welcomeBlock = document.getElementById(WELCOME_DOM_CONTAINER_ID);
-            welcomeBlock.innerHTML = 'Hi, ' + currentUser.first_name + '.'
-                + ' Help your friends meet new people with ' + APP_NAME + '.';
+            var welcomeName = document.getElementById(WELCOME_NAME_DOM_CONTAINER_ID);
+            welcomeName.innerText = currentUser.first_name;
+
+            var welcomeMessage = document.getElementById(WELCOME_MESSAGE_DOM_CONTAINER_ID);
+            welcomeMessage.innerText = 'Help your friends meet new people with '
+                + APP_NAME + '.';
 
             renderMFS();
             trackEvent(TRACK_FRIEND_SELECT_DISPLAY, 1);
@@ -139,8 +143,7 @@ function getTaggedFriendNames(taggedFriends) {
 
 function renderMFS() {
     // First get the list of friends for this user with the Graph API
-    FB.api('/me/taggable_friends?fields='+TAGGABLE_FRIEND_FIELDS.toString(),
-            function(response) {
+    FB.api('/me/taggable_friends?fields='+TAGGABLE_FRIEND_FIELDS.toString(), function(response) {
         taggableFriends = response.data;
 
         var container = document.getElementById(MULTI_FRIEND_SELECT_DOM_CONTAINER_ID);
@@ -148,52 +151,60 @@ function renderMFS() {
         mfsForm.id = MULTI_FRIEND_SELECT_DOM_FORM_ID;
 
         // Iterate through the array of friends object and create a checkbox for each one.
+        var friendsRow = document.createElement('div');
+        friendsRow.className = 'row';
         for(var i = 0; i < response.data.length; i++) {
             // friend item container
             var friendItem = document.createElement('div');
-            friendItem.className = 'friendContainer';
+            friendItem.className = 'friend col-xs-6 col-sm-3 col-md-3 col-lg-1';
             friendItem.id = 'friend_' + response.data[i].id;
+
+            // friend inner wrapper
+            var friendButton = document.createElement('button');
+            friendButton.className = 'friendButton';
 
             // friend image
             var image = document.createElement('img');
-            image.className = 'friendImage';
+            image.className = 'image img-thumbnail';
             image.src = response.data[i].picture.data.url;
-            friendItem.appendChild(image);
-
-            // friend right (of image) container
-            var rightContainer = document.createElement('div');
-            rightContainer.className = 'friendRight';
+            friendButton.appendChild(image);
 
             // checkbox
             var checkbox = document.createElement('input');
-            checkbox.className = 'friendCheckbox';
+            checkbox.className = 'checkbox';
             checkbox.type = 'checkbox';
             checkbox.name = 'friends';
             checkbox.value = response.data[i].id;
-            rightContainer.appendChild(checkbox);
+            friendButton.appendChild(checkbox);
 
             // friend name
             var name = document.createElement('div');
-            name.className = 'friendName';
+            name.className = 'name';
             name.innerHTML = response.data[i].name;
-            rightContainer.appendChild(name);
+            friendButton.appendChild(name);
 
-            friendItem.appendChild(rightContainer);
-            mfsForm.appendChild(friendItem);
+            friendItem.appendChild(friendButton);
+            friendsRow.appendChild(friendItem);
         }
+        mfsForm.appendChild(friendsRow);
         container.appendChild(mfsForm);
 
         // TODO: create load more button to grab from response.paging.next if it exists
         // TODO: create reason drop-down - presets and randos
         // TODO: create freeform text field
 
+        var buttonRow = document.createElement('div');
+        buttonRow.className = 'row';
+
         // Create a button to send the Request(s)
-        var sendButton = document.createElement('input');
-        sendButton.className = 'sendButton';
-        sendButton.type = 'button';
-        sendButton.value = 'Connect Friends';
+        var sendButton = document.createElement('button');
+        sendButton.className = 'btn btn-primary btn-lg btn-block send-button';
+        sendButton.type = 'submit';
+        sendButton.innerText = 'Connect Friends';
         sendButton.onclick = createConnectionObj;
-        mfsForm.appendChild(sendButton);
+        buttonRow.appendChild(sendButton);
+
+        mfsForm.appendChild(buttonRow);
     });
 }
 
