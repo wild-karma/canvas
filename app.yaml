@@ -1,7 +1,18 @@
 application: wild-karma
 version: 1-0-0
-runtime: python
+runtime: python27
+threadsafe: true
 api_version: 1
+
+skip_files:
+- ^(.*/)?#.*#$
+- ^(.*/)?.*~$
+- ^(.*/)?.*\.py[co]$
+- ^(.*/)?.*/RCS/.*$
+- ^(.*/)?\..*$
+- ^\.idea$
+- ^(.*/)?.*\.iml$
+- ^node_modules$
 
 handlers:
 - url: /(.+)
