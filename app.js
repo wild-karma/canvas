@@ -5,6 +5,7 @@ var APP_NAME = 'Wild Karma';
 var APP_NS_DEV = 'wild-karma-dev';
 var APP_NS_PROD = 'wild-karma';
 var MULTI_FRIEND_SELECT_DOM_CONTAINER_ID  = 'multi-friend-select';
+var PAGING_LIMIT = 800;
 var TAGGABLE_FRIEND_FIELDS = ['id', 'first_name', 'last_name', 'name', 'picture'];
 var UNKNOWN_USER_ID = 0;
 var WELCOME_MESSAGE_DOM_CONTAINER_ID = 'welcome-message';
@@ -132,7 +133,7 @@ function getTaggedFriendIds() {
 
 function renderMFS() {
     // First get the list of friends for this user with the Graph API
-    FB.api('/me/taggable_friends?fields='+TAGGABLE_FRIEND_FIELDS.toString(), function(response) {
+    FB.api('/me/taggable_friends?fields='+TAGGABLE_FRIEND_FIELDS.toString()+'&limit='+PAGING_LIMIT, function(response) {
         taggableFriends = response.data;
 
         var multiFriendSelect = document.getElementById(
