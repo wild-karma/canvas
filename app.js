@@ -149,32 +149,32 @@ function renderMFS() {
         // Iterate through the array of friends object and create a checkbox for each one.
         var friendsRow = document.createElement('div');
         friendsRow.className = 'row';
-        for(var i = 0; i < response.data.length; i++) {
+        for(var i = 0; i < taggableFriends.length; i++) {
             // friend item container
             var friendItem = document.createElement('div');
             friendItem.className = 'friend col-xs-6 col-sm-3 col-md-2 col-lg-1';
-            friendItem.id = 'friend_' + response.data[i].id;
+            friendItem.id = 'friend_' + taggableFriends[i].id;
 
             // friend inner wrapper
             var friendButton = document.createElement('button');
-            friendButton.id = response.data[i].id;
+            friendButton.id = taggableFriends[i].id;
             friendButton.className = 'btn btn-default';
             friendButton.type = 'button';
             friendButton.setAttribute('data-toggle', 'button');
-            friendButton.setAttribute('data-target', response.data[i].id);
+            friendButton.setAttribute('data-target', taggableFriends[i].id);
             friendButton.setAttribute('aria-pressed', 'false');
             friendButton.setAttribute('autocomplete', 'off');
 
             // friend image
             var image = document.createElement('img');
             image.className = 'image img-thumbnail';
-            image.src = response.data[i].picture.data.url;
+            image.src = taggableFriends[i].picture.data.url;
             friendButton.appendChild(image);
 
             // friend name
             var name = document.createElement('div');
             name.className = 'name';
-            name.innerHTML = response.data[i].name;
+            name.innerHTML = taggableFriends[i].name;
             friendButton.appendChild(name);
 
             friendItem.appendChild(friendButton);
