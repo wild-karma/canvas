@@ -1,6 +1,6 @@
 handlers:
 - url: '/'
-  static_files: 'index.html favicon.ico app.js'
+  static_files: 'favicon.ico index.html app.js style.css'
   upload: '.*'
 - url: '/'
   static_dir: '/'

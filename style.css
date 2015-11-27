@@ -1,0 +1,19 @@
+body {
+    background: transparent;
+}
+
+.welcome {
+    display: inline;
+}
+
+#multi-friend-select {
+}
+#multi-friend-select .friend {
+    margin-bottom: 15px;
+    overflow: hidden;
+    text-align: center;
+}
+#multi-friend-select .send-button {
+    margin: 0 auto;
+    max-width: 400px;
+}

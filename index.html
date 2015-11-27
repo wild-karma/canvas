@@ -38,9 +38,23 @@
             fjs.parentNode.insertBefore(js, fjs);
         }(document, 'script', 'facebook-jssdk'));
         </script>
+        <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+        <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+        <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" />
+        <link rel="stylesheet" href="style.css" />
     </head>
     <body>
-        <h1 id="fb-welcome"></h1>
-        <div id="multi-friend-select"></div>
+        <div class="container-fluid">
+            <div class="alert alert-info alert-dismissible" role="alert">
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                <strong>
+                    Aloha<div class="welcome" id="welcome-name"></div>!
+                </strong>
+                <div class="welcome" id="welcome-message"></div>
+            </div>
+            <div id="multi-friend-select"></div>
+        </div>
     </body>
 </html>

@@ -1,12 +1,14 @@
 // ### GLOBAL ENVIRONMENT SETTINGS ###
 var APP_ID_DEV = '1620490794859089';
 var APP_ID_PROD = '1619998651574970';
+var APP_NAME = 'Wild Karma';
 var APP_NS_DEV = 'wild-karma-dev';
 var APP_NS_PROD = 'wild-karma';
 var MULTI_FRIEND_SELECT_DOM_CONTAINER_ID  = 'multi-friend-select';
-var MULTI_FRIEND_SELECT_DOM_FORM_ID = MULTI_FRIEND_SELECT_DOM_CONTAINER_ID + '-form';
 var TAGGABLE_FRIEND_FIELDS = ['id', 'first_name', 'last_name', 'name', 'picture'];
 var UNKNOWN_USER_ID = 0;
+var WELCOME_MESSAGE_DOM_CONTAINER_ID = 'welcome-message';
+var WELCOME_NAME_DOM_CONTAINER_ID = 'welcome-name';
 
 
 //### GLOBAL ENVIRONMENT VARIABLES ###
@@ -20,7 +22,7 @@ var appId = function() {
 };
 var appNs = function() {
     return isDev ? APP_NS_DEV : APP_NS_PROD;
-}
+};
 var isDev = function() {
     return document.location.hostname.indexOf("localhost") > -1;
 };
@@ -45,10 +47,14 @@ var trackEvent = function(type, success) {
     if (!isDev()) { // will bomb if not in full FB Canvas environment
         FB.AppEvents.logEvent(type, null, params);
     }
-}
+};
 
 
 // ### COMMON HELPER METHODS ###
+function error(obj) {
+    console.error(obj);
+}
+
 function getCurrentUserId() {
     if (currentUser && currentUser.hasOwnProperty('id')) {
         return currentUser.id;
@@ -56,8 +62,8 @@ function getCurrentUserId() {
     return UNKNOWN_USER_ID;
 }
 
-function error(obj) {
-    console.error(obj);
+function updateUserWithStatus(message) {
+    alert(message);
 }
 
 
@@ -68,8 +74,12 @@ function onLogin(response) {
             currentUser = data;
             trackEvent(TRACK_LOGIN, 1);
 
-            var welcomeBlock = document.getElementById('fb-welcome');
-            welcomeBlock.innerHTML = 'Hello, ' + currentUser.first_name + '!';
+            var welcomeName = document.getElementById(WELCOME_NAME_DOM_CONTAINER_ID);
+            welcomeName.innerText = ' ' + currentUser.first_name;
+
+            var welcomeMessage = document.getElementById(WELCOME_MESSAGE_DOM_CONTAINER_ID);
+            welcomeMessage.innerText = 'Help your friends meet new people with '
+                + APP_NAME + '.';
 
             renderMFS();
             trackEvent(TRACK_FRIEND_SELECT_DISPLAY, 1);
@@ -85,11 +95,11 @@ function onLogin(response) {
 
 // ### BUSINESS LOGIC ###
 function clearSession() {
+    // reset connect button
+    $('#sendButton').button('reset');
+
     // clear friend selection
-    var mfsForm = document.getElementById(MULTI_FRIEND_SELECT_DOM_FORM_ID);
-    for(var i = 0; i < mfsForm.friends.length; i++) {
-        mfsForm.friends[i].checked = false;
-    }
+    $('#multi-friend-select .friend .active').removeClass('active');
 }
 
 function getConnectionReason() {
@@ -107,75 +117,95 @@ function getConnectionTypeDescription() {
     return 'loves bites and so do I';
 }
 
-function getTaggedFriends() {
-    var taggedFriends = [];
-    var mfsForm = document.getElementById(MULTI_FRIEND_SELECT_DOM_FORM_ID);
-    for(var i = 0; i < mfsForm.friends.length; i++) {
-        if(mfsForm.friends[i].checked) {
-            taggedFriends.push(taggableFriends[i]);
-        }
-    }
-    return taggedFriends;
-}
-
-function getTaggedFriendIds(taggedFriends) {
+function getTaggedFriendIds() {
     var taggedFriendIds = [];
-    for(var i = 0; i < taggedFriends.length; i++) {
-        taggedFriendIds.push(taggedFriends[i].id);
+    var friendSelector = $('#multi-friend-select .friend .active');
+    for(var i = 0; i < friendSelector.length; i++) {
+        taggedFriendIds.push(friendSelector[i].id);
     }
     return taggedFriendIds;
 }
 
-function getTaggedFriendNames(taggedFriends) {
-    var taggedFriendNames = [];
-    for(var i = 0; i < taggedFriends.length; i++) {
-        taggedFriendNames.push(taggedFriends[i].name);
-    }
-    return taggedFriendNames;
-}
-
 function renderMFS() {
     // First get the list of friends for this user with the Graph API
-    FB.api('/me/taggable_friends?fields='+TAGGABLE_FRIEND_FIELDS.toString(),
-            function(response) {
+    FB.api('/me/taggable_friends?fields='+TAGGABLE_FRIEND_FIELDS.toString(), function(response) {
         taggableFriends = response.data;
 
-        var container = document.getElementById(MULTI_FRIEND_SELECT_DOM_CONTAINER_ID);
-        var mfsForm = document.createElement('form');
-        mfsForm.id = MULTI_FRIEND_SELECT_DOM_FORM_ID;
+        var multiFriendSelect = document.getElementById(
+            MULTI_FRIEND_SELECT_DOM_CONTAINER_ID
+        );
 
         // Iterate through the array of friends object and create a checkbox for each one.
+        var friendsRow = document.createElement('div');
+        friendsRow.className = 'row';
         for(var i = 0; i < response.data.length; i++) {
-
-            // Image
-            var image = document.createElement('img');
-            image.src = response.data[i].picture.data.url;
-            mfsForm.appendChild(image);
-
-            // Checkbox and name
+            // friend item container
             var friendItem = document.createElement('div');
+            friendItem.className = 'friend col-xs-6 col-sm-3 col-md-3 col-lg-1';
             friendItem.id = 'friend_' + response.data[i].id;
 
-            var checkbox = '<input type="checkbox" name="friends" value="'
-                + response.data[i].id + '" />' + response.data[i].name;
-            friendItem.innerHTML = checkbox;
+            // friend inner wrapper
+            var friendButton = document.createElement('button');
+            friendButton.id = response.data[i].id;
+            friendButton.className = 'btn btn-primary';
+            friendButton.type = 'button';
+            friendButton.setAttribute('data-toggle', 'button');
+            friendButton.setAttribute('data-target', response.data[i].id);
+            friendButton.setAttribute('aria-pressed', 'false');
+            friendButton.setAttribute('autocomplete', 'off');
 
-            mfsForm.appendChild(friendItem);
+            // friend image
+            var image = document.createElement('img');
+            image.className = 'image img-thumbnail';
+            image.src = response.data[i].picture.data.url;
+            friendButton.appendChild(image);
+
+            // friend name
+            var name = document.createElement('div');
+            name.className = 'name';
+            name.innerHTML = response.data[i].name;
+            friendButton.appendChild(name);
+
+            friendItem.appendChild(friendButton);
+            friendsRow.appendChild(friendItem);
         }
-        container.appendChild(mfsForm);
+        multiFriendSelect.appendChild(friendsRow);
 
+        var spacingRow = document.createElement('div');
+        spacingRow.className = 'row';
+        spacingRow.innerHTML = '&nbsp;';
+        multiFriendSelect.appendChild(spacingRow);
+
+        // TODO: create load more button to grab from response.paging.next if it exists
         // TODO: create reason drop-down - presets and randos
+        // TODO: create freeform text field
+
+        var buttonRow = document.createElement('div');
+        buttonRow.className = 'row';
 
         // Create a button to send the Request(s)
-        var sendButton = document.createElement('input');
-        sendButton.type = 'button';
-        sendButton.value = 'Connect Friends';
+        var sendButton = document.createElement('button');
+        sendButton.id = 'sendButton';
+        sendButton.className = 'btn btn-primary btn-lg btn-block send-button';
+        sendButton.type = 'submit';
+        sendButton.innerText = 'Connect Friends';
+        sendButton.setAttribute('data-loading-text', 'Connecting ...');
         sendButton.onclick = createConnectionObj;
-        mfsForm.appendChild(sendButton);
+        buttonRow.appendChild(sendButton);
+
+        multiFriendSelect.appendChild(buttonRow);
     });
 }
 
 function createConnectionObj() {
+    if (getTaggedFriendIds().length < 2) {
+        updateUserWithStatus("Please select at least two friends to connect.");
+        return;
+    }
+
+    // connect button into load state
+    $('#sendButton').button('loading');
+
     // https://developers.facebook.com/docs/sharing/opengraph/object-api#objectapi-creatinguser
     // https://developers.facebook.com/docs/sharing/opengraph/object-properties
 
@@ -216,13 +246,13 @@ function publishStory(createdObjIds) {
                 privacy: {
                     'value': 'SELF' // will be exposed to SELF and anyone tagged
                 },
-                tags: getTaggedFriendIds(getTaggedFriends()).toString()
+                tags: getTaggedFriendIds().toString()
             }, function (response) {
                 clearSession();
         
                 if (response && !response.error) {
                     trackEvent(TRACK_CONNECTION_SUGGESTED, 1);
-                    alert('Connection Made');
+                    updateUserWithStatus('Connection Made');
                 } else {
                     trackEvent(TRACK_CONNECTION_SUGGESTED, 0);
                     error(response.error);
