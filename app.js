@@ -45,10 +45,10 @@ var taggableFriends = [];
 
 // ### GLOBAL ENVIRONMENT METHODS ###
 var appId = function() {
-    return isDev ? APP_ID_DEV : APP_ID_PROD;
+    return isDev() ? APP_ID_DEV : APP_ID_PROD;
 };
 var appNs = function() {
-    return isDev ? APP_NS_DEV : APP_NS_PROD;
+    return isDev() ? APP_NS_DEV : APP_NS_PROD;
 };
 var isDev = function() {
     return document.location.hostname.indexOf("localhost") > -1;
