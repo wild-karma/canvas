@@ -63,6 +63,12 @@ function getCurrentUserId() {
     return UNKNOWN_USER_ID;
 }
 
+function sortFriendsByName(a, b) {
+    var x = a.name.toLowerCase();
+    var y = b.name.toLowerCase();
+    return ((x < y) ? -1 : ((x > y) ? 1 : 0));
+}
+
 function updateUserWithStatus(message) {
     alert(message);
 }
@@ -134,7 +140,7 @@ function getTaggedFriendIds() {
 function renderMFS() {
     // First get the list of friends for this user with the Graph API
     FB.api('/me/taggable_friends?fields='+TAGGABLE_FRIEND_FIELDS.toString()+'&limit='+PAGING_LIMIT, function(response) {
-        taggableFriends = response.data;
+        taggableFriends = response.data.sort(sortFriendsByName);
 
         var multiFriendSelect = document.getElementById(
             MULTI_FRIEND_SELECT_DOM_CONTAINER_ID
@@ -152,7 +158,7 @@ function renderMFS() {
             // friend inner wrapper
             var friendButton = document.createElement('button');
             friendButton.id = response.data[i].id;
-            friendButton.className = 'btn btn-primary';
+            friendButton.className = 'btn btn-default';
             friendButton.type = 'button';
             friendButton.setAttribute('data-toggle', 'button');
             friendButton.setAttribute('data-target', response.data[i].id);
