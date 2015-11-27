@@ -187,7 +187,6 @@ function renderMFS() {
         spacingRow.innerHTML = '&nbsp;';
         multiFriendSelect.appendChild(spacingRow);
 
-        // TODO: create load more button to grab from response.paging.next if it exists
         // TODO: create reason drop-down - presets and randos
         // TODO: create freeform text field
 
