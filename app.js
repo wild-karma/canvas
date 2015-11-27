@@ -82,6 +82,10 @@ function onLogin(response) {
                 + APP_NAME + '.';
 
             renderMFS();
+
+            // TODO load custom for ?fb_source=opengraphobject&fb_object_id=...
+            // var og_obj_id = Arg('fb_object_id');
+
             trackEvent(TRACK_FRIEND_SELECT_DISPLAY, 1);
             // HYPOTHESIS: one would expect to see
             // TRACK_LOGIN ~ TRACK_FRIEND_SELECT_DISPLAY
