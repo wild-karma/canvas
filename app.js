@@ -199,8 +199,8 @@ function renderMFS() {
         sendButton.id = 'sendButton';
         sendButton.className = 'btn btn-primary btn-lg btn-block send-button';
         sendButton.type = 'submit';
-        sendButton.innerText = 'Connect Friends';
-        sendButton.setAttribute('data-loading-text', 'Connecting ...');
+        sendButton.innerText = 'Introduce them privately';
+        sendButton.setAttribute('data-loading-text', 'Tagging privately ...');
         sendButton.onclick = createConnectionObj;
         buttonRow.appendChild(sendButton);
 
