@@ -5,7 +5,6 @@ var APP_NAME = 'Wild Karma';
 var APP_NS_DEV = 'wild-karma-dev';
 var APP_NS_PROD = 'wild-karma';
 var MULTI_FRIEND_SELECT_DOM_CONTAINER_ID  = 'multi-friend-select';
-var MULTI_FRIEND_SELECT_DOM_FORM_ID = MULTI_FRIEND_SELECT_DOM_CONTAINER_ID + '-form';
 var TAGGABLE_FRIEND_FIELDS = ['id', 'first_name', 'last_name', 'name', 'picture'];
 var UNKNOWN_USER_ID = 0;
 var WELCOME_MESSAGE_DOM_CONTAINER_ID = 'welcome-message';
@@ -52,6 +51,10 @@ var trackEvent = function(type, success) {
 
 
 // ### COMMON HELPER METHODS ###
+function error(obj) {
+    console.error(obj);
+}
+
 function getCurrentUserId() {
     if (currentUser && currentUser.hasOwnProperty('id')) {
         return currentUser.id;
@@ -59,8 +62,8 @@ function getCurrentUserId() {
     return UNKNOWN_USER_ID;
 }
 
-function error(obj) {
-    console.error(obj);
+function updateUserWithStatus(message) {
+    alert(message);
 }
 
 
@@ -92,11 +95,11 @@ function onLogin(response) {
 
 // ### BUSINESS LOGIC ###
 function clearSession() {
+    // reset connect button
+    $('#sendButton').button('reset');
+
     // clear friend selection
-    var mfsForm = document.getElementById(MULTI_FRIEND_SELECT_DOM_FORM_ID);
-    for(var i = 0; i < mfsForm.friends.length; i++) {
-        mfsForm.friends[i].checked = false;
-    }
+    $('#multi-friend-select .friend .active').removeClass('active');
 }
 
 function getConnectionReason() {
@@ -114,31 +117,13 @@ function getConnectionTypeDescription() {
     return 'loves bites and so do I';
 }
 
-function getTaggedFriends() {
-    var taggedFriends = [];
-    var mfsForm = document.getElementById(MULTI_FRIEND_SELECT_DOM_FORM_ID);
-    for(var i = 0; i < mfsForm.friends.length; i++) {
-        if(mfsForm.friends[i].checked) {
-            taggedFriends.push(taggableFriends[i]);
-        }
-    }
-    return taggedFriends;
-}
-
-function getTaggedFriendIds(taggedFriends) {
+function getTaggedFriendIds() {
     var taggedFriendIds = [];
-    for(var i = 0; i < taggedFriends.length; i++) {
-        taggedFriendIds.push(taggedFriends[i].id);
+    var friendSelector = $('#multi-friend-select .friend .active');
+    for(var i = 0; i < friendSelector.length; i++) {
+        taggedFriendIds.push(friendSelector[i].id);
     }
     return taggedFriendIds;
-}
-
-function getTaggedFriendNames(taggedFriends) {
-    var taggedFriendNames = [];
-    for(var i = 0; i < taggedFriends.length; i++) {
-        taggedFriendNames.push(taggedFriends[i].name);
-    }
-    return taggedFriendNames;
 }
 
 function renderMFS() {
@@ -146,9 +131,9 @@ function renderMFS() {
     FB.api('/me/taggable_friends?fields='+TAGGABLE_FRIEND_FIELDS.toString(), function(response) {
         taggableFriends = response.data;
 
-        var container = document.getElementById(MULTI_FRIEND_SELECT_DOM_CONTAINER_ID);
-        var mfsForm = document.createElement('form');
-        mfsForm.id = MULTI_FRIEND_SELECT_DOM_FORM_ID;
+        var multiFriendSelect = document.getElementById(
+            MULTI_FRIEND_SELECT_DOM_CONTAINER_ID
+        );
 
         // Iterate through the array of friends object and create a checkbox for each one.
         var friendsRow = document.createElement('div');
@@ -161,21 +146,19 @@ function renderMFS() {
 
             // friend inner wrapper
             var friendButton = document.createElement('button');
-            friendButton.className = 'friendButton';
+            friendButton.id = response.data[i].id;
+            friendButton.className = 'btn btn-primary';
+            friendButton.type = 'button';
+            friendButton.setAttribute('data-toggle', 'button');
+            friendButton.setAttribute('data-target', response.data[i].id);
+            friendButton.setAttribute('aria-pressed', 'false');
+            friendButton.setAttribute('autocomplete', 'off');
 
             // friend image
             var image = document.createElement('img');
             image.className = 'image img-thumbnail';
             image.src = response.data[i].picture.data.url;
             friendButton.appendChild(image);
-
-            // checkbox
-            var checkbox = document.createElement('input');
-            checkbox.className = 'checkbox';
-            checkbox.type = 'checkbox';
-            checkbox.name = 'friends';
-            checkbox.value = response.data[i].id;
-            friendButton.appendChild(checkbox);
 
             // friend name
             var name = document.createElement('div');
@@ -186,8 +169,12 @@ function renderMFS() {
             friendItem.appendChild(friendButton);
             friendsRow.appendChild(friendItem);
         }
-        mfsForm.appendChild(friendsRow);
-        container.appendChild(mfsForm);
+        multiFriendSelect.appendChild(friendsRow);
+
+        var spacingRow = document.createElement('div');
+        spacingRow.className = 'row';
+        spacingRow.innerHTML = '&nbsp;';
+        multiFriendSelect.appendChild(spacingRow);
 
         // TODO: create load more button to grab from response.paging.next if it exists
         // TODO: create reason drop-down - presets and randos
@@ -198,17 +185,27 @@ function renderMFS() {
 
         // Create a button to send the Request(s)
         var sendButton = document.createElement('button');
+        sendButton.id = 'sendButton';
         sendButton.className = 'btn btn-primary btn-lg btn-block send-button';
         sendButton.type = 'submit';
         sendButton.innerText = 'Connect Friends';
+        sendButton.setAttribute('data-loading-text', 'Connecting ...');
         sendButton.onclick = createConnectionObj;
         buttonRow.appendChild(sendButton);
 
-        mfsForm.appendChild(buttonRow);
+        multiFriendSelect.appendChild(buttonRow);
     });
 }
 
 function createConnectionObj() {
+    if (getTaggedFriendIds().length < 2) {
+        updateUserWithStatus("Please select at least two friends to connect.");
+        return;
+    }
+
+    // connect button into load state
+    $('#sendButton').button('loading');
+
     // https://developers.facebook.com/docs/sharing/opengraph/object-api#objectapi-creatinguser
     // https://developers.facebook.com/docs/sharing/opengraph/object-properties
 
@@ -249,13 +246,13 @@ function publishStory(createdObjIds) {
                 privacy: {
                     'value': 'SELF' // will be exposed to SELF and anyone tagged
                 },
-                tags: getTaggedFriendIds(getTaggedFriends()).toString()
+                tags: getTaggedFriendIds().toString()
             }, function (response) {
                 clearSession();
         
                 if (response && !response.error) {
                     trackEvent(TRACK_CONNECTION_SUGGESTED, 1);
-                    alert('Connection Made');
+                    updateUserWithStatus('Connection Made');
                 } else {
                     trackEvent(TRACK_CONNECTION_SUGGESTED, 0);
                     error(response.error);

@@ -6,24 +6,14 @@ body {
     display: inline;
 }
 
-#multi-friend-select-form {
+#multi-friend-select {
 }
-#multi-friend-select-form .friend {
-    cursor: pointer;
+#multi-friend-select .friend {
+    margin-bottom: 15px;
     overflow: hidden;
-    padding: 10px;
     text-align: center;
 }
-#multi-friend-select-form .friend .friendButton {
-}
-#multi-friend-select-form .friend .image {
-}
-#multi-friend-select-form .friend .name {
-}
-#multi-friend-select-form .friend .checkbox {
-    display: none;
-}
-#multi-friend-select-form .send-button {
+#multi-friend-select .send-button {
     margin: 0 auto;
     max-width: 400px;
 }
