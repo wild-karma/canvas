@@ -4,6 +4,32 @@ var APP_ID_PROD = '1619998651574970';
 var APP_NAME = 'Wild Karma';
 var APP_NS_DEV = 'wild-karma-dev';
 var APP_NS_PROD = 'wild-karma';
+var CONNECTION_TYPE = [
+    'coworkers',
+    'brewery buddies',
+    'romantic entanglement',
+    'climbing companions',
+    'strictly platonic',
+    'wing wo/man',
+    'active casual',
+    'active skilled',
+    'active ultra',
+    'fairy godmother',
+    'family'
+];
+var CONNECTION_TYPE_DESC = [
+    'Strictly business until HR gets involved.',
+    "We're not trying to get hammered, we're trying to find the perfect quaffable!",
+    'Some things are negotiable, some things are not. Two are better than one?',
+    "It's nice to have someone ready to ... SWEET BABY JESUS I'M FALLING",
+    'Confined to words, theories, or ideals, and not leading to practical action.',
+    'Rule #5 (of the code): partner has the right to deck partner if there is no chance of getting out alive',
+    'We enjoy being outside.',
+    'You ever take that thing off any sweet jumps?',
+    "It's not fun unless we lose some toenails!!!",
+    'Magical powers required. Mentoring suggested.',
+    'Horribly uncomfortably awkward dinner scenes.'
+];
 var MULTI_FRIEND_SELECT_DOM_CONTAINER_ID  = 'multi-friend-select';
 var PAGING_LIMIT = 800;
 var TAGGABLE_FRIEND_FIELDS = ['id', 'first_name', 'last_name', 'name', 'picture'];
@@ -106,26 +132,31 @@ function onLogin(response) {
 
 // ### BUSINESS LOGIC ###
 function clearSession() {
-    // reset connect button
-    $('#sendButton').button('reset');
-
     // clear friend selection
     $('#multi-friend-select .friend .active').removeClass('active');
+
+    // reset drop-down reasoning option to first
+    $('#reasonCategorySelect').prop('selectedIndex', 0);
+
+    // reset text area reasoning
+    $('#reasonTextArea').val('');
+
+    // reset connect button
+    $('#sendButton').button('reset');
 }
 
-function getConnectionReason() {
-    // TODO: get value from user text field
-    return 'this is why you guys should hoook up';
+function getConnectionMessage() {
+    return $('#reasonTextArea').val();
 }
 
 function getConnectionType() {
-    // TODO: get value from drop-down
-    return 'romantic entanglement';
+    var selectedIndex = $('#reasonCategorySelect').find(":selected").val();
+    return CONNECTION_TYPE[selectedIndex];
 }
 
 function getConnectionTypeDescription() {
-    // TODO: get value from stored dictionary
-    return 'loves bites and so do I';
+    var selectedIndex = $('#reasonCategorySelect').find(":selected").val();
+    return CONNECTION_TYPE_DESC[selectedIndex];
 }
 
 function getTaggedFriendIds() {
@@ -182,13 +213,46 @@ function renderMFS() {
         }
         multiFriendSelect.appendChild(friendsRow);
 
+        // spacer
         var spacingRow = document.createElement('div');
         spacingRow.className = 'row';
         spacingRow.innerHTML = '&nbsp;';
         multiFriendSelect.appendChild(spacingRow);
 
-        // TODO: create reason drop-down - presets and randos
-        // TODO: create freeform text field
+        // why u b trying to connectify these fine folks?
+        var connectionReasonRow = document.createElement('div');
+        connectionReasonRow.className = 'row';
+
+        var reasonForm = document.createElement('form');
+
+        reasonForm.appendChild(document.createElement('br'));
+
+        var reasonCategorySelect = document.createElement('select');
+        reasonCategorySelect.id = 'reasonCategorySelect';
+        reasonCategorySelect.className = 'form-control';
+        for(var i = 0; i < CONNECTION_TYPE.length; i++) {
+            var selectOption = document.createElement('option');
+            selectOption.innerText = CONNECTION_TYPE[i] + ' :: ' + CONNECTION_TYPE_DESC[i];
+            selectOption.value = i;
+            reasonCategorySelect.appendChild(selectOption);
+        }
+        reasonForm.appendChild(reasonCategorySelect);
+
+        reasonForm.appendChild(document.createElement('br'));
+
+        var reasonTextArea = document.createElement('textarea');
+        reasonTextArea.id = 'reasonTextArea';
+        reasonTextArea.className = 'form-control';
+        reasonTextArea.rows = 3;
+        reasonTextArea.setAttribute('placeholder', 'I think you guys should hang out!');
+        reasonForm.appendChild(reasonTextArea);
+
+        connectionReasonRow.appendChild(reasonForm);
+
+        multiFriendSelect.appendChild(connectionReasonRow);
+
+        // spacer
+        multiFriendSelect.appendChild(spacingRow);
 
         var buttonRow = document.createElement('div');
         buttonRow.className = 'row';
@@ -252,7 +316,7 @@ function publishStory(createdObjIds) {
                 connection: createdObjIds,
                 start_time: (new Date()).toJSON(),
                 expires_in: 30, // past-tense in 30 seconds
-                message: getConnectionReason(),
+                message: getConnectionMessage(),
                 privacy: {
                     'value': 'SELF' // will be exposed to SELF and anyone tagged
                 },
@@ -262,7 +326,7 @@ function publishStory(createdObjIds) {
         
                 if (response && !response.error) {
                     trackEvent(TRACK_CONNECTION_SUGGESTED, 1);
-                    updateUserWithStatus('Connection Made');
+                    updateUserWithStatus('Your friends have been notified.');
                 } else {
                     trackEvent(TRACK_CONNECTION_SUGGESTED, 0);
                     error(response.error);
