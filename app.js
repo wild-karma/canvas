@@ -152,7 +152,7 @@ function renderMFS() {
         for(var i = 0; i < response.data.length; i++) {
             // friend item container
             var friendItem = document.createElement('div');
-            friendItem.className = 'friend col-xs-6 col-sm-3 col-md-3 col-lg-1';
+            friendItem.className = 'friend col-xs-6 col-sm-3 col-md-2 col-lg-1';
             friendItem.id = 'friend_' + response.data[i].id;
 
             // friend inner wrapper
