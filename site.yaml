@@ -1,6 +1,0 @@
-handlers:
-- url: '/'
-  static_files: 'favicon.ico index.html app.js style.css arg-1.3.min.js'
-  upload: '.*'
-- url: '/'
-  static_dir: '/'

@@ -1,0 +1,13 @@
+application: wild-karma
+version: 1-0-0
+runtime: python
+api_version: 1
+
+handlers:
+- url: /(.+)
+  static_files: \1
+  upload: (.*)
+
+- url: /
+  static_files: index.html
+  upload: index.html
