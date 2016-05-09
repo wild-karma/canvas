@@ -10,6 +10,7 @@ var CONNECTION_TYPE = [
     'romantic entanglement',
     'climbing companions',
     'strictly platonic',
+    'art aficionados',
     'wing wo/man',
     'active casual',
     'active skilled',
@@ -23,6 +24,7 @@ var CONNECTION_TYPE_DESC = [
     'Some things are negotiable, some things are not. Two are better than one?',
     "It's nice to have someone ready to ... SWEET BABY JESUS I'M FALLING",
     'Confined to words, theories, or ideals, and not leading to practical action.',
+    'Human creative skill and imagination is enjoyed better with company.',
     'Rule #5 (of the code): partner has the right to deck partner if there is no chance of getting out alive',
     'We enjoy being outside.',
     'You ever take that thing off any sweet jumps?',
@@ -112,7 +114,8 @@ function onLogin(response) {
 
             var welcomeMessage = document.getElementById(WELCOME_MESSAGE_DOM_CONTAINER_ID);
             welcomeMessage.innerText = 'Help your friends meet new people with '
-                + APP_NAME + '.';
+                + APP_NAME + '.'
+                + ' Only the people you tag will see!';
 
             renderMFS();
 
@@ -262,7 +265,7 @@ function renderMFS() {
         sendButton.id = 'sendButton';
         sendButton.className = 'btn btn-primary btn-lg btn-block send-button';
         sendButton.type = 'submit';
-        sendButton.innerText = 'Introduce them privately';
+        sendButton.innerText = 'Post to Facebook privately';
         sendButton.setAttribute('data-loading-text', 'Tagging privately ...');
         sendButton.onclick = createConnectionObj;
         buttonRow.appendChild(sendButton);
