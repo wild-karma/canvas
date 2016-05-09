@@ -53,7 +53,8 @@ var appNs = function() {
     return isDev() ? APP_NS_DEV : APP_NS_PROD;
 };
 var isDev = function() {
-    return document.location.hostname.indexOf("localhost") > -1;
+    return (document.location.hostname.indexOf('localhost') > -1)
+        || (window.location.pathname.indexOf('wild-karma-dev') > -1);
 };
 
 
